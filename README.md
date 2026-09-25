@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@makeaivideo/sdk.svg)](https://www.npmjs.com/package/@makeaivideo/sdk) [![license](https://img.shields.io/npm/l/@makeaivideo/sdk.svg)](LICENSE)
 
-**The official SDK for the [MakeAIVideo API](https://makeaivideo.ai/docs/api).** Generate finished, captioned AI videos from code: send a brief or your own script and get back an MP4 with script, AI voiceover, scenes, captions and music, sized for [TikTok](https://makeaivideo.ai/tiktok-video-generator), [Instagram Reels](https://makeaivideo.ai/instagram-reels-generator) and [YouTube Shorts](https://makeaivideo.ai/ai-shorts-generator).
+**The official SDK for the [MakeAIVideo API](https://makeaivideo.ai/docs/api)** ([SDK guide](https://makeaivideo.ai/docs/sdk)). Generate finished, captioned AI videos from code: send a brief or your own script and get back an MP4 with script, AI voiceover, scenes, captions and music, sized for [TikTok](https://makeaivideo.ai/tiktok-video-generator), [Instagram Reels](https://makeaivideo.ai/instagram-reels-generator) and [YouTube Shorts](https://makeaivideo.ai/ai-shorts-generator).
 
 - Typed client for every endpoint: videos, scripts, tools, characters, voices, music, ideas, templates, webhooks
 - `waitForReady()` polling helper that respects the API's `poll_after_seconds`
@@ -95,7 +95,7 @@ Full endpoint reference: [makeaivideo.ai/docs/api](https://makeaivideo.ai/docs/a
 
 - **Make videos in the app:** [prompt to video](https://makeaivideo.ai/prompt-to-video), [script to video](https://makeaivideo.ai/script-to-video), [image to video](https://makeaivideo.ai/image-to-video), [talking avatar](https://makeaivideo.ai/talking-avatar), [AI ad maker](https://makeaivideo.ai/ai-ad-maker), [blog to video](https://makeaivideo.ai/blog-to-video)
 - **By format:** [TikTok video generator](https://makeaivideo.ai/tiktok-video-generator), [Instagram Reels generator](https://makeaivideo.ai/instagram-reels-generator), [AI Shorts generator](https://makeaivideo.ai/ai-shorts-generator), [faceless YouTube channel](https://makeaivideo.ai/faceless-youtube-channel), [AI UGC video](https://makeaivideo.ai/ai-ugc-video), [AI explainer video](https://makeaivideo.ai/ai-explainer-video), [AI spokesperson video](https://makeaivideo.ai/ai-spokesperson-video)
-- **For developers:** [developer hub](https://makeaivideo.ai/developers), [API reference](https://makeaivideo.ai/docs/api), [quickstart](https://makeaivideo.ai/docs/quickstart), [authentication](https://makeaivideo.ai/docs/authentication), [webhooks](https://makeaivideo.ai/docs/webhooks), [MCP server](https://makeaivideo.ai/docs/mcp), [AI agents](https://makeaivideo.ai/docs/agents), [CLI](https://makeaivideo.ai/docs/cli)
+- **For developers:** [developer hub](https://makeaivideo.ai/developers), [API reference](https://makeaivideo.ai/docs/api), [SDK guide](https://makeaivideo.ai/docs/sdk), [quickstart](https://makeaivideo.ai/docs/quickstart), [authentication](https://makeaivideo.ai/docs/authentication), [webhooks](https://makeaivideo.ai/docs/webhooks), [MCP server](https://makeaivideo.ai/docs/mcp), [AI agents](https://makeaivideo.ai/docs/agents), [CLI](https://makeaivideo.ai/docs/cli)
 - **Compare:** [MakeAIVideo vs HeyGen](https://makeaivideo.ai/compare/heygen), [MakeAIVideo vs Synthesia](https://makeaivideo.ai/compare/synthesia)
 - [Pricing](https://makeaivideo.ai/pricing) · [Free creator tools](https://makeaivideo.ai/tools) · [Blog](https://makeaivideo.ai/blog) · [Help](https://makeaivideo.ai/help) · [Contact](https://makeaivideo.ai/contact)
 

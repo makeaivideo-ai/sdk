@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 (2026-09-25)
+
+- Docs: link the SDK guide at https://makeaivideo.ai/docs/sdk; npm homepage now points there.
+
 ## 1.0.0 (2026-09-25)
 
 - First release: typed client for the MakeAIVideo REST API v1 (videos, scripts, tools, characters, voices, music, ideas, templates, brand kit, workspace, webhooks).
