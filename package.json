@@ -1,0 +1,32 @@
+{
+  "name": "@makeaivideo/sdk",
+  "version": "1.0.0",
+  "description": "Official TypeScript/JavaScript SDK for the MakeAIVideo API: generate finished AI videos (script, voiceover, scenes, captions, music) for TikTok, Reels and YouTube Shorts from a brief or your own script.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE", "CHANGELOG.md"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --target node18",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": { "node": ">=18.0.0" },
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "keywords": ["makeaivideo", "ai video", "ai video generator", "text to video", "video api", "tiktok", "instagram reels", "youtube shorts", "faceless video", "ai voiceover", "sdk", "typescript"],
+  "author": "MakeAIVideo <support@makeaivideo.ai> (https://makeaivideo.ai)",
+  "license": "MIT",
+  "homepage": "https://makeaivideo.ai/developers",
+  "repository": { "type": "git", "url": "git+https://github.com/makeaivideo-ai/sdk.git" },
+  "bugs": { "url": "https://github.com/makeaivideo-ai/sdk/issues", "email": "support@makeaivideo.ai" },
+  "devDependencies": { "tsup": "^8.3.0", "typescript": "^5.6.0", "@types/node": "^20.0.0" }
+}
