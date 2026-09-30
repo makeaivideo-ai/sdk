@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (2026-09-30)
+
+- README: "What you can make with MakeAIVideo" section linking each video type; npm keywords for each video type. No code changes.
+
 ## 1.1.0 (2026-09-30)
 
 - New `publishing` namespace: `publishing.accounts.list()`, `publishing.accounts.connect(platform)`, `publishing.publish(videoId, {...})`, `publishing.posts.list()`, `publishing.posts.get(id)`. Post or schedule finished videos to connected TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, Threads, Pinterest, Bluesky, Telegram and Discord accounts.
