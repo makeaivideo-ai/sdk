@@ -7,7 +7,7 @@
 MakeAIVideo is an AI video generator for short-form video. The SDK wraps the [REST API](https://makeaivideo.ai/docs/api) ([SDK guide](https://makeaivideo.ai/docs/sdk)) and returns MP4s sized for [TikTok](https://makeaivideo.ai/tiktok-video-generator), [Instagram Reels](https://makeaivideo.ai/instagram-reels-generator) and [YouTube Shorts](https://makeaivideo.ai/ai-shorts-generator).
 
 - Typed client for every endpoint: videos, scripts, tools, characters, voices, music, ideas, templates, publishing, webhooks
-- Post or schedule finished videos to TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, Threads, Pinterest, Bluesky, Telegram and Discord
+- Post or schedule finished videos to TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord
 - `waitForReady()` polling helper that respects the API's `poll_after_seconds`
 - Automatic retries on rate limits and server errors, typed errors, idempotent creates
 - Webhook signature verification
@@ -71,7 +71,7 @@ const post = await mav.publishing.publish(video_id, {
 const status = await mav.publishing.posts.get(String(post.id)) // or subscribe to post.published / post.failed
 ```
 
-Supported: TikTok, Instagram (as a Reel), YouTube (9:16 as a Short), Facebook Pages, LinkedIn, Threads and Pinterest connect by link; Bluesky, Telegram and Discord connect in the [web app](https://app.makeaivideo.ai). X is not supported. See [auto-post](https://makeaivideo.ai/auto-post).
+Supported: TikTok, Instagram (as a Reel), YouTube (9:16 as a Short, 16:9 as a regular video), Facebook Pages, LinkedIn, X (videos up to 140 seconds), Threads and Pinterest connect by link; Bluesky, Telegram and Discord connect in the [web app](https://app.makeaivideo.ai). See [auto-post](https://makeaivideo.ai/auto-post).
 
 ## Webhooks instead of polling
 
@@ -110,7 +110,7 @@ For a presenter on screen, [AI talking avatar videos](https://makeaivideo.ai/tal
 
 From a still image, [image to video](https://makeaivideo.ai/image-to-video) turns product shots, landscapes and album art into a moving clip, and [animate a photo](https://makeaivideo.ai/animate-a-photo) brings portraits, pets and old family photos to life.
 
-Every video is sized for short-form platforms: use the [TikTok video generator](https://makeaivideo.ai/tiktok-video-generator), the [Instagram Reels generator](https://makeaivideo.ai/instagram-reels-generator) or the [AI YouTube Shorts generator](https://makeaivideo.ai/ai-shorts-generator), or run a [faceless YouTube channel](https://makeaivideo.ai/faceless-youtube-channel) without filming. When a video is ready, [auto-post to social media](https://makeaivideo.ai/auto-post) posts or schedules it to TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, Threads, Pinterest, Bluesky, Telegram and Discord (X is not supported). Plans and credits are on the [MakeAIVideo pricing page](https://makeaivideo.ai/pricing), and AI assistants connect through the [MakeAIVideo MCP server setup guide](https://makeaivideo.ai/docs/mcp).
+Every video is sized for short-form platforms: use the [TikTok video generator](https://makeaivideo.ai/tiktok-video-generator), the [Instagram Reels generator](https://makeaivideo.ai/instagram-reels-generator) or the [AI YouTube Shorts generator](https://makeaivideo.ai/ai-shorts-generator), or run a [faceless YouTube channel](https://makeaivideo.ai/faceless-youtube-channel) without filming. When a video is ready, [auto-post to social media](https://makeaivideo.ai/auto-post) posts or schedules it to TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord. Plans and credits are on the [MakeAIVideo pricing page](https://makeaivideo.ai/pricing), and AI assistants connect through the [MakeAIVideo MCP server setup guide](https://makeaivideo.ai/docs/mcp).
 
 From code, `videos.create()` covers the brief-driven tools (explainer, listicle, story, UGC, demo, article and spokesperson) and your own scripts, and `publishing.publish()` posts the result. The [API reference](https://makeaivideo.ai/docs/api) lists exactly what each endpoint accepts.
 
@@ -120,7 +120,7 @@ From code, `videos.create()` covers the brief-driven tools (explainer, listicle,
 
 **What is `@makeaivideo/sdk`?** The official, MIT-licensed TypeScript/JavaScript client for the MakeAIVideo REST API (`https://app.makeaivideo.ai/api/v1`). Node 18+, ESM and CommonJS, zero runtime dependencies.
 
-**Can it post videos to TikTok, Instagram or YouTube?** Yes. `publishing.publish()` posts a finished video now or on a schedule to accounts connected to your workspace. X is not supported.
+**Can it post videos to TikTok, Instagram or YouTube?** Yes. `publishing.publish()` posts a finished video now or on a schedule to accounts connected to your workspace: TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord.
 
 **Can I use it from Claude, ChatGPT or Cursor instead of code?** Yes: connect the [MakeAIVideo MCP server](https://makeaivideo.ai/docs/mcp) at `https://mcp.makeaivideo.ai`, or install [`@makeaivideo/mcp`](https://github.com/makeaivideo-ai/mcp).
 
@@ -146,7 +146,7 @@ From code, `videos.create()` covers the brief-driven tools (explainer, listicle,
 
 ## About MakeAIVideo
 
-[MakeAIVideo](https://makeaivideo.ai) is an AI video generator that turns a brief, a prompt, your own script, an image or a talking avatar into a finished, captioned short-form video: script, AI voiceover, AI-generated or stock scenes, captions and music, exported as an MP4 ready for TikTok, Instagram Reels and YouTube Shorts. It also does character swap, and posts or schedules videos to connected TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, Threads, Pinterest, Bluesky, Telegram and Discord accounts. Operated by MintClips Ltd (UK).
+[MakeAIVideo](https://makeaivideo.ai) is an AI video generator that turns a brief, a prompt, your own script, an image or a talking avatar into a finished, captioned short-form video: script, AI voiceover, AI-generated or stock scenes, captions and music, exported as an MP4 ready for TikTok, Instagram Reels and YouTube Shorts. It also does character swap, and posts or schedules videos to connected TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord accounts. Operated by MintClips Ltd (UK).
 
 - **For developers:** [developer hub](https://makeaivideo.ai/developers), [API reference](https://makeaivideo.ai/docs/api), [SDK guide](https://makeaivideo.ai/docs/sdk), [quickstart](https://makeaivideo.ai/docs/quickstart), [authentication](https://makeaivideo.ai/docs/authentication), [webhooks](https://makeaivideo.ai/docs/webhooks), [MCP server](https://makeaivideo.ai/docs/mcp), [AI agents](https://makeaivideo.ai/docs/agents), [CLI](https://makeaivideo.ai/docs/cli)
 - **Compare:** [MakeAIVideo vs HeyGen](https://makeaivideo.ai/compare/heygen), [MakeAIVideo vs Synthesia](https://makeaivideo.ai/compare/synthesia)

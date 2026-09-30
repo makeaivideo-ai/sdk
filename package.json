@@ -1,6 +1,6 @@
 {
   "name": "@makeaivideo/sdk",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Official TypeScript/JavaScript SDK for MakeAIVideo, the AI video generator API: turn a prompt or script into a finished video (voiceover, AI or stock scenes, captions, music) and post it to TikTok, Instagram Reels, YouTube Shorts and more.",
   "type": "module",
   "main": "./dist/index.cjs",

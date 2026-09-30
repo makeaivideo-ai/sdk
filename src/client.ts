@@ -250,8 +250,8 @@ export class MakeAIVideo {
 
   /**
    * Post finished videos to the social accounts connected to this workspace:
-   * TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, Threads, Pinterest,
-   * Bluesky, Telegram and Discord.
+   * TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads,
+   * Pinterest, Bluesky, Telegram and Discord.
    */
   readonly publishing = {
     accounts: {

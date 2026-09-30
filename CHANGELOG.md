@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (2026-09-30)
+
+- Posting to X is now supported (videos up to 140 seconds): `publishing.accounts.connect("x")`. README and doc comments list X. No code changes.
+
 ## 1.1.1 (2026-09-30)
 
 - README: "What you can make with MakeAIVideo" section linking each video type; npm keywords for each video type. No code changes.
