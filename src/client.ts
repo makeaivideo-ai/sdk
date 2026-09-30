@@ -248,6 +248,43 @@ export class MakeAIVideo {
       this.http.request("PATCH", "/brand-kit", { body: patch }),
   }
 
+  /**
+   * Post finished videos to the social accounts connected to this workspace:
+   * TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, Threads, Pinterest,
+   * Bluesky, Telegram and Discord.
+   */
+  readonly publishing = {
+    accounts: {
+      /** Connected accounts (acc_... ids), the plan's account limit, and every platform. */
+      list: (): Promise<JsonObject> => this.http.request("GET", "/publishing/accounts"),
+      /** A short-lived link a PERSON opens in a browser to connect one OAuth account. */
+      connect: (platform: string): Promise<JsonObject> =>
+        this.http.request("POST", "/publishing/accounts/connect", { body: { platform } }),
+    },
+    /** Post a finished video now, or schedule it with `scheduled_for`. Async: poll posts.get or use post.* webhooks. */
+    publish: (
+      videoId: string,
+      params: {
+        account_ids: string[]
+        caption: string
+        caption_overrides?: Record<string, string>
+        youtube_title?: string | null
+        scheduled_for?: string | null
+        timezone?: string
+        idempotency_key?: string
+      },
+    ): Promise<JsonObject> =>
+      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/publish`, { body: params }),
+    posts: {
+      /** Publish history, newest first. */
+      list: (params: { limit?: number; cursor?: string; video_id?: string } = {}): Promise<JsonObject> =>
+        this.http.request("GET", "/publishing/posts", { query: params }),
+      /** One post: status and per-destination results. */
+      get: (postId: string): Promise<JsonObject> =>
+        this.http.request("GET", `/publishing/posts/${encodeURIComponent(postId)}`),
+    },
+  }
+
   readonly webhooks = {
     list: async (): Promise<Webhook[]> => {
       const r = await this.http.request<{ webhooks?: Webhook[] } | Webhook[]>("GET", "/webhooks")

@@ -176,6 +176,9 @@ export type WebhookEvent =
   | "video.ready"
   | "video.failed"
   | "character.created"
+  | "post.published"
+  | "post.partially_failed"
+  | "post.failed"
   | (string & {})
 
 export interface Webhook {
