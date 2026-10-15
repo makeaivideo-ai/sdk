@@ -108,33 +108,53 @@ MakeAIVideo turns almost any starting point into a finished short-form video. St
 
 For a presenter on screen, [AI talking avatar videos](https://makeaivideo.ai/talking-avatar) lip-sync a presenter you pick, or one made from your own reference photo, to a script. [AI spokesperson videos](https://makeaivideo.ai/ai-spokesperson-video) suit corporate messaging you want to re-render when details change, and [AI UGC video ads](https://makeaivideo.ai/ai-ugc-video) put an AI spokesperson on your ad script for Meta and TikTok. [Character swap](https://makeaivideo.ai/character-swap) replaces the person in a video you upload while the motion and audio stay as filmed.
 
-From a still image, [image to video](https://makeaivideo.ai/image-to-video) turns product shots, landscapes and album art into a moving clip, and [animate a photo](https://makeaivideo.ai/animate-a-photo) brings portraits, pets and old family photos to life.
+From a still image, [image to video](https://makeaivideo.ai/image-to-video) turns product shots, portraits, landscapes and album art into a moving clip. For ads built from your product photos, use the [AI ad maker](https://makeaivideo.ai/ai-ad-maker).
 
 Every video is sized for short-form platforms: use the [TikTok video generator](https://makeaivideo.ai/tiktok-video-generator), the [Instagram Reels generator](https://makeaivideo.ai/instagram-reels-generator) or the [AI YouTube Shorts generator](https://makeaivideo.ai/ai-shorts-generator), or run a [faceless YouTube channel](https://makeaivideo.ai/faceless-youtube-channel) without filming. When a video is ready, [auto-post to social media](https://makeaivideo.ai/auto-post) posts or schedules it to TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord. Plans and credits are on the [MakeAIVideo pricing page](https://makeaivideo.ai/pricing), and AI assistants connect through the [MakeAIVideo MCP server setup guide](https://makeaivideo.ai/docs/mcp).
 
-From code, `videos.create()` covers the brief-driven tools (explainer, listicle, story, UGC, demo, article and spokesperson) and your own scripts, and `publishing.publish()` posts the result. The [API reference](https://makeaivideo.ai/docs/api) lists exactly what each endpoint accepts.
+From code, `videos.create()` covers the brief-driven tools (explainer, listicle, story, UGC, demo, article and spokesperson, a lip-synced presenter) and your own scripts, and `publishing.publish()` posts the result. Image to video, talking photo and character swap are REST endpoints the SDK does not wrap yet: call them over HTTP with the same key ([image to video](https://makeaivideo.ai/docs/api/videos/create-image-to-video), [talking avatar](https://makeaivideo.ai/docs/api/videos/create-talking-avatar), [character swap](https://makeaivideo.ai/docs/api/videos/create-character-swap)).
 
 ## FAQ
 
-**What is MakeAIVideo?** An AI video generator that turns a prompt, script, image or talking avatar into a finished short-form video with voiceover, scenes, captions and music, then posts or schedules it to connected social accounts. [Learn more](https://makeaivideo.ai).
+### Is there an API for AI video generation?
 
-**What is `@makeaivideo/sdk`?** The official, MIT-licensed TypeScript/JavaScript client for the MakeAIVideo REST API (`https://app.makeaivideo.ai/api/v1`). Node 18+, ESM and CommonJS, zero runtime dependencies.
+Yes. MakeAIVideo has a REST API at `https://app.makeaivideo.ai/api/v1` that turns a prompt or script into a finished short-form MP4, and this SDK is its official TypeScript client. Start with the [quickstart](https://makeaivideo.ai/docs/quickstart).
 
-**Can it post videos to TikTok, Instagram or YouTube?** Yes. `publishing.publish()` posts a finished video now or on a schedule to accounts connected to your workspace: TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord.
+### What is MakeAIVideo?
 
-**Can I use it from Claude, ChatGPT or Cursor instead of code?** Yes: connect the [MakeAIVideo MCP server](https://makeaivideo.ai/docs/mcp) at `https://mcp.makeaivideo.ai`, or install [`@makeaivideo/mcp`](https://github.com/makeaivideo-ai/mcp).
+An AI video generator that turns a prompt, script, image or talking avatar into a finished short-form video with voiceover, scenes, captions and music, then posts or schedules it to connected social accounts. [Learn more](https://makeaivideo.ai).
 
-**How long does a video take?** Minutes. Create returns at once with a `video_id`; poll with `waitForReady()` or subscribe to the `video.ready` webhook.
+### What is `@makeaivideo/sdk`?
 
-**How is it priced?** MakeAIVideo is a paid product with monthly plans and a 7-day trial (card required). API calls use the same credits as the app, and `videos.estimate()` quotes the cost before you create. See [pricing](https://makeaivideo.ai/pricing).
+The official, MIT-licensed TypeScript/JavaScript client for the MakeAIVideo REST API (`https://app.makeaivideo.ai/api/v1`). Node 18+, ESM and CommonJS, zero runtime dependencies.
 
-**Where do I get support?** Open an [issue](https://github.com/makeaivideo-ai/sdk/issues) or email support@makeaivideo.ai.
+### Can it post videos to TikTok, Instagram or YouTube?
+
+Yes. `publishing.publish()` posts a finished video now or on a schedule to accounts connected to your workspace: TikTok, Instagram, YouTube, Facebook Pages, LinkedIn, X, Threads, Pinterest, Bluesky, Telegram and Discord.
+
+### Can I use it from Claude, ChatGPT or Cursor instead of code?
+
+Yes: connect the [MakeAIVideo MCP server](https://makeaivideo.ai/docs/mcp) at `https://mcp.makeaivideo.ai`, or install [`@makeaivideo/mcp`](https://github.com/makeaivideo-ai/mcp).
+
+### How long does a video take?
+
+Minutes. Create returns at once with a `video_id`; poll with `waitForReady()` or subscribe to the `video.ready` webhook.
+
+### How is it priced?
+
+MakeAIVideo is a paid product with monthly plans and a 7-day trial (card required). API calls use the same credits as the app, with no separate API plan, and `videos.estimate()` quotes the cost before you create. See [pricing](https://makeaivideo.ai/pricing).
+
+### Where do I get support?
+
+Open an [issue](https://github.com/makeaivideo-ai/sdk/issues) or email support@makeaivideo.ai.
 
 ## Links
 
 - Website: [makeaivideo.ai](https://makeaivideo.ai)
 - Developer hub: [makeaivideo.ai/developers](https://makeaivideo.ai/developers)
 - SDK guide: [makeaivideo.ai/docs/sdk](https://makeaivideo.ai/docs/sdk)
+- Pricing: [makeaivideo.ai/pricing](https://makeaivideo.ai/pricing)
+- AI agents: [makeaivideo.ai/agents](https://makeaivideo.ai/agents) · [connect your AI app](https://app.makeaivideo.ai/ai-assistants)
 - API reference: [makeaivideo.ai/docs/api](https://makeaivideo.ai/docs/api)
 - OpenAPI spec: [app.makeaivideo.ai/api/v1/openapi.json](https://app.makeaivideo.ai/api/v1/openapi.json)
 - REST base URL: `https://app.makeaivideo.ai/api/v1`
