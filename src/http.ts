@@ -63,7 +63,9 @@ export class HttpClient {
       Accept: "application/json",
       "User-Agent": `makeaivideo-sdk-js/${VERSION}`,
     }
-    if (opts.body !== undefined) headers["Content-Type"] = "application/json"
+    // FormData (file uploads) sets its own multipart Content-Type with the boundary.
+    const multipart = typeof FormData !== "undefined" && opts.body instanceof FormData
+    if (opts.body !== undefined && !multipart) headers["Content-Type"] = "application/json"
     if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey
 
     let attempt = 0
@@ -76,7 +78,7 @@ export class HttpClient {
         res = await this.fetchImpl(url, {
           method,
           headers,
-          body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+          body: opts.body === undefined ? undefined : multipart ? (opts.body as FormData) : JSON.stringify(opts.body),
           signal: controller.signal,
         })
       } catch (err) {

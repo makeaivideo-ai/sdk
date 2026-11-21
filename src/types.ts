@@ -25,12 +25,35 @@ export type VideoStatus =
   | (string & {})
 
 export interface Credits {
+  /** Spendable balance in US dollars, rounded down. */
+  balance_usd?: number | null
+  credits_per_usd?: number
   plan: string
   subscription_status: string
   allowance: number
   bonus: number
   used: number
   remaining: number
+  /** When the plan credits refill (ISO time): the renewal, or the plan start after a trial. Null when nothing refills. */
+  resets_at?: string | null
+  /** Plan credits granted at `resets_at`. */
+  refill_credits?: number | null
+  refill_kind?: "renewal" | "plan_start" | null
+  /** `credits.low` fires once per credit period when `remaining` falls under this. */
+  low_balance_threshold?: number
+  /** A link the USER opens in a browser to add credits or start their plan. */
+  top_up_url?: string
+}
+
+/** From `topUpLink()`: a link a person opens to pay on Stripe's page. The API never charges a card. */
+export interface TopUpLink {
+  url: string
+  /** "checkout" for a set amount, or "get_more_credits" (the popup on Billing). */
+  opens: "checkout" | "get_more_credits" | (string & {})
+  amount_usd: number | null
+  credits: number | null
+  remaining: number
+  note: string
 }
 
 export interface Me {
@@ -101,6 +124,8 @@ export interface VideoScript {
   title: string
   hook: string
   visual_thread?: string
+  /** From `videos.script()`: send it back unchanged so the video follows the brief's rules. */
+  brief_key?: string
   total_duration_seconds: number
   hashtags?: string[]
   scenes: ScriptScene[]
@@ -115,6 +140,9 @@ interface CreateVideoCommon {
   music_id?: string
   caption_style?: string
   character_id?: number | null
+  /** AI video quality: "best" (default) or "fast" (faster and cheaper, a bit less detail). */
+  quality?: "best" | "fast"
+  /** Optional, prefer `quality`. */
   video_model?: string
   /** Default true. `false` creates a draft you start later with `videos.generate()`. */
   start_generation?: boolean
@@ -126,14 +154,25 @@ interface CreateVideoCommon {
 export interface CreateVideoFromBrief extends CreateVideoCommon {
   tool: string
   fields: Record<string, string>
+  /** Target length in seconds; also the ceiling for the finished video. */
   duration_seconds?: number
+  /** Footage: AI scenes, stock footage, or AI stills with slow camera moves. */
+  mode?: VideoMode
+  /** Up to 5 keys from `uploads.reference()` / `uploads.referenceFromUrl()`: real product photos. */
+  product_image_keys?: string[]
 }
 
 /** Bring your own script: it is shot as written. */
+export type VideoMode = "talking-head" | "cinematic" | "hybrid" | "stock-narrated" | "smart-mix" | "ai-pictures"
+
 export interface CreateVideoFromScript extends CreateVideoCommon {
   script: VideoScript
-  mode?: "talking-head" | "cinematic" | "hybrid" | "stock-narrated" | "smart-mix"
+  mode?: VideoMode
   style?: string
+  /** Length ceiling in seconds; defaults to the script's total_duration_seconds and can only lower it. */
+  max_duration_seconds?: number
+  /** Default true. false renders without narration and costs fewer credits (not for talking-head). */
+  voiceover?: boolean
 }
 
 export type CreateVideoParams = CreateVideoFromBrief | CreateVideoFromScript
@@ -141,6 +180,9 @@ export type CreateVideoParams = CreateVideoFromBrief | CreateVideoFromScript
 export interface VideoCreated {
   video_id: string
   status: VideoStatus
+  /** true while the video waits for your other videos to finish (up to 5 render at once). It starts by itself. */
+  waiting_for_slot?: boolean
+  note?: string
   title: string | null
   scene_count: number | null
   poll_after_seconds: number | null
@@ -151,11 +193,19 @@ export interface Video {
   video_id: string
   title: string | null
   status: VideoStatus
-  progress: Record<string, unknown>
+  progress: { note?: string; scenes_done?: number; scenes_total?: number | null } & Record<string, unknown>
+  waiting_for_slot?: boolean
   duration_seconds: number | null
   aspect_ratio: AspectRatio | null
+  /** What the video cost in US dollars, rounded up. */
+  cost_usd?: number | null
   credits_used: number | null
   error: string | null
+  /** Machine code for the failure, e.g. quota_exceeded, validation_failed. */
+  error_code?: string | null
+  /** scripting: no script was written (create it again). start: the script is saved but the render could not start. */
+  failed_stage?: "scripting" | "start" | null
+  retryable?: boolean | null
   /** Direct MP4 URL once `status` is "ready". */
   download: string | null
   created_at: string | null
@@ -167,6 +217,7 @@ export interface VideoSummary {
   video_id: string | null
   title: string | null
   status: string | null
+  waiting_for_slot?: boolean
   created_at: string | null
   thumbnail_url: string | null
 }
@@ -179,6 +230,8 @@ export type WebhookEvent =
   | "post.published"
   | "post.partially_failed"
   | "post.failed"
+  | "credits.low"
+  | "credits.refilled"
   | (string & {})
 
 export interface Webhook {

@@ -87,18 +87,21 @@ See the [webhooks guide](https://makeaivideo.ai/docs/webhooks) for events and re
 
 ## Errors
 
-Every failure is a `MakeAIVideoError` with `status`, `code` and `requestId`. Subclasses: `AuthenticationError` (401), `PermissionError` (403, missing key scope), `ValidationError` (400), `InsufficientCreditsError` (402), `NotFoundError` (404), `RateLimitError` (429), `VideoFailedError` (render failed while waiting).
+Every failure is a `MakeAIVideoError` with `status`, `code` and `requestId`. Subclasses: `AuthenticationError` (401), `PermissionError` (403, missing key scope), `ValidationError` (400), `InsufficientCreditsError` (402: nothing was created or charged; `shortfall`, `resetsAt` and `topUpUrl` say how many credits are missing, when the plan refills and where the user adds more), `NotFoundError` (404), `RateLimitError` (429), `VideoFailedError` (render failed while waiting).
 
 ## API coverage
 
 | Area | Methods |
 | --- | --- |
-| Account | `me()`, `credits()`, `workspace.get/update` |
-| Videos | `videos.list/create/get/update/delete/generate/cancel/download/estimate/waitForReady`, `videos.renders.*`, `videos.regenerateScene`, `videos.voice.get/set`, `videos.captions`, `videos.shareLink` |
+| Account | `me()`, `credits()` (balance, `resets_at`, `top_up_url`), `topUpLink({ credits })` (a link the user opens to add credits; never charges), `workspace.get/update` |
+| Videos | `videos.list/create/get/update/delete/generate/cancel/download/estimate/waitForReady`, `videos.renders.*`, `videos.regenerateScene`, `videos.voice.get/set`, `videos.captions`, `videos.shareLink`, `videos.report` |
+| Photo and video tools | `videos.imageToVideo`, `videos.talkingAvatar`, `videos.characterSwap` |
 | Scripts | `videos.script`, `videos.scriptify`, `videos.fetchUrl`, `ai.enhancePrompt`, `ideas.generate` |
-| Assets | `tools.list`, `templates.list`, `characters.*`, `voices.list/preview`, `music.list/generate`, `uploads.referenceFromUrl`, `brandKit.get/update` |
+| Assets | `tools.list`, `templates.list`, `characters.*`, `voices.list/preview/sample`, `music.list/generate`, `uploads.reference/referenceFromUrl/videoAvatar/videoFromUrl`, `brandKit.get/update/watermark` |
 | Publishing | `publishing.accounts.list/connect`, `publishing.publish`, `publishing.posts.list/get` |
 | Webhooks | `webhooks.list/create/get/update/delete/test/deliveries` |
+
+Every request and response shape is also exported as a generated type (`ApiVideo`, `ApiCreateVideo`, `ApiCredits`...), and `API_OPERATIONS` lists every endpoint, both generated from the API's OpenAPI document (`https://app.makeaivideo.ai/api/v1/openapi.json`).
 
 Full endpoint reference: [makeaivideo.ai/docs/api](https://makeaivideo.ai/docs/api).
 

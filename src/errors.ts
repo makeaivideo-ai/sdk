@@ -44,11 +44,40 @@ export class ValidationError extends MakeAIVideoError {
   }
 }
 
-/** 402: not enough credits for this call. `details` carries required vs remaining. */
+/**
+ * 402: not enough credits for this call. Nothing was created or charged.
+ * `details` carries `required`, `remaining`, `shortfall`, `resets_at`,
+ * `refill_credits` and `top_up_url` (inside `details.held` for a held create);
+ * the getters below read either place.
+ */
 export class InsufficientCreditsError extends MakeAIVideoError {
   constructor(message: string, requestId?: string, details?: unknown) {
     super(message, { status: 402, code: "insufficient_credits", requestId, details })
     this.name = "InsufficientCreditsError"
+  }
+
+  private field(name: string): unknown {
+    const d = (this.details ?? {}) as Record<string, unknown>
+    const held = (d.held ?? {}) as Record<string, unknown>
+    return d[name] ?? held[name]
+  }
+
+  /** Credits missing for this call. */
+  get shortfall(): number | undefined {
+    const v = this.field("shortfall")
+    return typeof v === "number" ? v : undefined
+  }
+
+  /** When the plan credits refill (ISO time), or null when nothing refills. */
+  get resetsAt(): string | null | undefined {
+    const v = this.field("resets_at")
+    return typeof v === "string" || v === null ? v : undefined
+  }
+
+  /** A link the USER opens in a browser to add credits. Nothing is charged until they pay. */
+  get topUpUrl(): string | undefined {
+    const v = this.field("top_up_url")
+    return typeof v === "string" ? v : undefined
   }
 }
 

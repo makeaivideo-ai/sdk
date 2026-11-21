@@ -3,6 +3,7 @@ import { VideoFailedError, MakeAIVideoError } from "./errors"
 import type {
   CreateVideoParams,
   Credits,
+  TopUpLink,
   DownloadLink,
   Estimate,
   JsonObject,
@@ -18,6 +19,18 @@ import type {
   Workspace,
   AspectRatio,
 } from "./types"
+
+/** A file to upload: a Blob or File (Node 18+ and browsers), with an optional name. */
+export type UploadFile = Blob | { data: Blob; name: string }
+
+function formWith(field: string, files: UploadFile[]): FormData {
+  const form = new FormData()
+  for (const f of files) {
+    if (f instanceof Blob) form.append(field, f, (f as Blob & { name?: string }).name ?? "upload")
+    else form.append(field, f.data, f.name)
+  }
+  return form
+}
 
 const TERMINAL_OK = new Set(["ready"])
 const TERMINAL_FAIL = new Set(["failed"])
@@ -55,9 +68,20 @@ export class MakeAIVideo {
     return this.http.request("GET", "/me")
   }
 
-  /** Credit balance for the current billing period. */
+  /** Credit balance for the current billing period, when it refills, and the add-credits link. */
   credits(): Promise<Credits> {
     return this.http.request("GET", "/credits")
+  }
+
+  /**
+   * A link the USER opens in a browser to add credits (they pay on Stripe's
+   * page; nothing is charged from the API). Pass `credits` (e.g. an
+   * `InsufficientCreditsError`'s `shortfall`) or `amount_usd` (whole dollars,
+   * 5-500) to open checkout for that amount; with neither it opens the
+   * Get more credits popup.
+   */
+  topUpLink(params: { credits?: number; amount_usd?: number } = {}): Promise<TopUpLink> {
+    return this.http.request("GET", "/credits/top-up-link", { query: params })
   }
 
   readonly tools = {
@@ -157,6 +181,63 @@ export class MakeAIVideo {
     shareLink: (videoId: string, params: { expires_in_seconds?: number } = {}): Promise<JsonObject> =>
       this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/share-link`, { body: params }),
 
+    /** Flag a generated video for review. */
+    report: (
+      videoId: string,
+      params: { reason: string; category?: "nsfw" | "violence" | "trademark" | "harassment" | "other" }
+    ): Promise<JsonObject> =>
+      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/report`, { body: params }),
+
+    /**
+     * Animate one image into a 5, 10 or 15 s clip. Optional `narration` makes
+     * the subject speak it (voice + lip sync). `image_key` comes from
+     * `uploads.reference()` or `uploads.referenceFromUrl()`.
+     */
+    imageToVideo: (params: {
+      image_key: string
+      duration_seconds?: 5 | 10 | 15
+      animation_prompt?: string
+      narration?: string
+      voice_id?: string
+      title?: string
+      quality?: "best" | "fast"
+      idempotency_key?: string
+    }): Promise<VideoCreated> =>
+      this.http.request("POST", "/videos/image-to-video", { body: params, idempotencyKey: params.idempotency_key }),
+
+    /**
+     * Your own filmed video speaks a new script (voice + lip sync onto your
+     * clip). `avatar_video_key` comes from `uploads.videoAvatar()` or
+     * `uploads.videoFromUrl()`. For an AI presenter, use `create` with mode talking-head.
+     */
+    talkingAvatar: (params: {
+      avatar_video_key: string
+      script: string
+      voice_id: string
+      add_broll?: boolean
+      title?: string
+      idempotency_key?: string
+    }): Promise<VideoCreated> =>
+      this.http.request("POST", "/videos/talking-avatar", { body: params, idempotencyKey: params.idempotency_key }),
+
+    /**
+     * Character Swap: the person in your 3-60 s video becomes a character
+     * (`character_id`) or the person in 1-4 photos (`photo_keys`). Motion,
+     * camera, room and the original audio are kept. `rights_confirmed` must
+     * be true: you own the video (or have permission) and may use the likeness.
+     */
+    characterSwap: (params: {
+      source_video_key: string
+      duration_seconds: number
+      rights_confirmed: true
+      character_id?: number
+      photo_keys?: string[]
+      direction?: string
+      title?: string
+      idempotency_key?: string
+    }): Promise<VideoCreated> =>
+      this.http.request("POST", "/videos/character-swap", { body: params, idempotencyKey: params.idempotency_key }),
+
     /**
      * Poll until the video is ready (returns it, with `download` set) or
      * failed (throws VideoFailedError). Respects the API's poll_after_seconds.
@@ -227,6 +308,9 @@ export class MakeAIVideo {
       this.http.request("GET", "/voices", { query: filters }),
     preview: (params: JsonObject): Promise<JsonObject> =>
       this.http.request("POST", "/voices/preview", { body: params }),
+    /** The stock sample line of one voice. */
+    sample: (voiceId: string): Promise<JsonObject> =>
+      this.http.request("GET", `/voices/${encodeURIComponent(voiceId)}/preview`),
   }
 
   readonly music = {
@@ -240,12 +324,24 @@ export class MakeAIVideo {
     /** Import a reference image (product photo, face) by URL. */
     referenceFromUrl: (imageUrl: string): Promise<JsonObject> =>
       this.http.request("POST", "/uploads/reference-from-url", { body: { image_url: imageUrl } }),
+    /** Upload reference images (up to 25 MB each): product photos, faces, an image to animate. */
+    reference: (files: UploadFile | UploadFile[]): Promise<JsonObject> =>
+      this.http.request("POST", "/uploads/reference", { body: formWith("files", Array.isArray(files) ? files : [files]) }),
+    /** Import a video (MP4/MOV/WebM, up to 100 MB) by URL, for `talkingAvatar` or `characterSwap`. */
+    videoFromUrl: (videoUrl: string): Promise<JsonObject> =>
+      this.http.request("POST", "/uploads/video-from-url", { body: { video_url: videoUrl } }),
+    /** Upload a short video of a person, for `talkingAvatar` or `characterSwap`. */
+    videoAvatar: (file: UploadFile): Promise<JsonObject> =>
+      this.http.request("POST", "/uploads/video-avatar", { body: formWith("file", [file]) }),
   }
 
   readonly brandKit = {
     get: (): Promise<JsonObject> => this.http.request("GET", "/brand-kit"),
     update: (patch: { show_watermark?: boolean; remove_watermark?: boolean }): Promise<JsonObject> =>
       this.http.request("PATCH", "/brand-kit", { body: patch }),
+    /** Upload a watermark image (a PNG with transparency works best). */
+    watermark: (file: UploadFile): Promise<JsonObject> =>
+      this.http.request("POST", "/brand-kit/watermark", { body: formWith("file", [file]) }),
   }
 
   /**
