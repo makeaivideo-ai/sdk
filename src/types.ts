@@ -14,6 +14,7 @@ export interface MakeAIVideoConfig {
 
 export type AspectRatio = "9:16" | "1:1" | "16:9"
 export type VideoStatus =
+  | "waiting_for_plan"
   | "draft"
   | "idea"
   | "scripting"
@@ -211,8 +212,156 @@ export interface Video {
   created_at: string | null
   updated_at: string | null
   poll_after_seconds: number | null
+
+  /** status "waiting_for_plan": asked for while the account had no plan or trial. It starts by itself once one is active, and expires after 24 hours (`expires_at`). */
+  waiting_for_plan?: boolean
+  /** waiting_for_plan only: the page the USER opens to start their trial or plan. */
+  start_trial_url?: string
+  /** waiting_for_plan only: words an agent can pass to the user. */
+  say_to_user?: string
+  expires_at?: string | null
+  credits_estimate?: number | null
+
+  /** A still of the video (lasting URL). */
+  thumbnail_url?: string | null
+  /** The owner's page for the video (needs sign-in). Not a public link: `videos.shareLink()` makes one. */
+  web_url?: string
+  /** The owner's editor page (needs sign-in). */
+  editor_url?: string
+  mode?: VideoMode | (string & {}) | null
+  quality?: "best" | "fast" | (string & {}) | null
+  /** Where an edit stands (a scene remake, a re-voice, the export after it). */
+  edit?: VideoEditState
+
+  // ── Only with `videos.get(id, { include: "scenes" })` ──
+  voiceover?: boolean
+  script?: { title: string | null; hook: string | null; hashtags: string[]; scenes_total: number }
+  scenes?: VideoScene[]
+  captions?: { style: string; alignment: string | null; on: boolean }
+  music?: VideoMusic
+  voice?: { voice_id: string | null; name: string | null; note: string | null }
+  /** What the writer could not do from the brief, in words for the user. */
+  plan_note?: string | null
+  cannot_do?: string[]
+  /** A scene that missed the brief, and the fix (`free` when the fix costs nothing). */
+  brief_miss?: { note: string; fix: string | null; free: boolean } | null
+  /** A free export is owed (e.g. after a free remake): `videos.renders.create()` costs nothing. */
+  free_export_pending?: boolean
 }
 
+/** Where edits to a finished video stand. While `in_progress`, the download is the OLD file. */
+export interface VideoEditState {
+  in_progress: boolean
+  stage: "remaking_scene" | "re_voicing" | "updating_file" | null
+  /** Scenes being remade or re-voiced now. */
+  scenes: number[]
+  /** The last edit's export did not happen or failed: export again (`videos.renders.create()`) to put it in the file. */
+  file_out_of_date: boolean
+  note: string | null
+}
+
+/** One scene of a video, from `videos.get(id, { include: "scenes" })`. */
+export interface VideoScene {
+  scene_number: number
+  narration: string
+  visual_description: string
+  /** Who is on screen or speaking: a cast member's name, "presenter", or null. */
+  character: string | null
+  scene_type: "character" | "scene" | "product_still" | (string & {}) | null
+  duration_seconds: number | null
+  quality: "best" | "fast" | (string & {})
+  /** A still of the scene (lasting public URL) when one was made. */
+  thumbnail_url: string | null
+  clip_url: string | null
+  /** Our clip check still fails this scene after its re-roll. */
+  flagged: boolean
+  /** A flagged scene can be remade once for free (`regenerateScene` with `use_free_remake: true`). */
+  free_remake: boolean
+  /** The mouth moves with the line: change the line with `regenerateScene({ narration })`, not `editSceneNarration` (that answers 409 lip_synced_scene). */
+  lip_synced: boolean
+}
+
+export interface VideoMusic {
+  track_id: string | null
+  name: string | null
+  volume: number | null
+  source: "library" | "generated" | "upload" | "none"
+}
+
+/** A track from `music.library()`. */
+export interface LibraryTrack {
+  track_id: string
+  name: string
+  description: string
+  mood: string
+  duration_seconds: number
+  preview_url: string
+}
+
+/** One row of the paged list (`videos.listPage()`). */
+export interface VideoListItem {
+  video_id: string
+  title: string | null
+  status: VideoStatus
+  waiting_for_slot: boolean
+  mode: string | null
+  aspect_ratio: AspectRatio | null
+  duration_seconds: number | null
+  credits_used: number
+  /** "app", "api", "mcp", ... */
+  created_via: string
+  created_at: string
+  updated_at: string
+  thumbnail_url: string | null
+  web_url: string
+}
+
+export interface VideoListPage {
+  videos: VideoListItem[]
+  /** Pass to the next `listPage({ cursor })`; null on the last page. */
+  next_cursor: string | null
+  limit: number
+}
+
+/**
+ * Price confirmation for paid edits. A paid edit needs `max_credits`
+ * (without it: 409 `price_required` with the price; above it: 409
+ * `price_over_limit`). Nothing is charged either way, and the charge never
+ * passes `max_credits`. `dry_run: true` returns the price only.
+ */
+export interface PricedEditOptions {
+  dry_run?: boolean
+  max_credits?: number
+  /** Export the video again when the edit is done (priced in). */
+  auto_export?: boolean
+  /** A retry with the same key gets the first answer instead of a second charge. Sent as the Idempotency-Key header. */
+  idempotency_key?: string
+}
+
+/** Machine codes in `error.code` (`MakeAIVideoError.code`) worth branching on. */
+export type ApiErrorCode =
+  | "unauthorized"
+  | "forbidden"
+  | "invalid_request"
+  | "not_found"
+  | "rate_limited"
+  | "insufficient_credits"
+  /** A paid edit without max_credits: details carry the price. Nothing charged. */
+  | "price_required"
+  /** The price is above max_credits (or a held create). Nothing charged. */
+  | "price_over_limit"
+  /** That scene is being remade now: wait for `edit.in_progress` to clear. Retryable. */
+  | "already_running"
+  /** The scene's mouth moves with its line: use `regenerateScene({ narration })`. */
+  | "lip_synced_scene"
+  | "conflict"
+  | "publishing_unavailable"
+  | "no_accounts"
+  | "account_unavailable"
+  | "video_too_large"
+  | (string & {})
+
+/** A row of `videos.list()` (the unpaged form: the newest 50). For paging use `videos.listPage()`. */
 export interface VideoSummary {
   video_id: string | null
   title: string | null
@@ -264,7 +413,10 @@ export interface DownloadLink {
 }
 
 export interface Estimate {
-  tool: string
+  /** Set for a brief-tool quote. */
+  tool?: string
+  /** Set for a `kind` quote (prompt-to-video, image-to-video, talking-avatar, character-swap). */
+  kind?: string
   duration_seconds: number
   aspect_ratio: string
   credits: number

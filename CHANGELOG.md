@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 (2026-11-21)
+
+- Scenes and edits: `videos.get(id, { include: "scenes" })` returns the script, `scenes` (each with `lip_synced`, `flagged`, `free_remake`, still and clip URLs), captions, music, voice and `brief_miss`. Every `get()` now types `edit` (an edit still being made: `in_progress`, `stage`, `file_out_of_date`), `thumbnail_url`, `web_url` and `editor_url`.
+- New methods: `videos.createFromPrompt()` (Prompt to video), `videos.editSceneNarration()` (new line, picture kept), `videos.setMusic()`, `music.library()`, `videos.listPage()` and `videos.iterate()` (paged list with `next_cursor`), `publishing.suggestCaption()`, `publishing.posts.reschedule()` and `publishing.posts.cancel()`, `brandKit.watermarkFromUrl()`.
+- Paid edits take `dry_run`, `max_credits`, `auto_export` and `idempotency_key` (sent as `Idempotency-Key`): `regenerateScene()` (also `visual_description`, `quality: "best"`, `use_free_remake`), `editSceneNarration()`, `voice.set()`; `renders.create()` takes `dry_run` and `max_credits`. `publishing.publish()` now sends its `idempotency_key` as the header too.
+- `voice.set()` types fixed: `voice_stability` is "stable", "balanced" or "expressive" and `scenes` is `{ scene_number, narration }[]` (the old types did not match the API).
+- `estimate()` quotes `kind` creates (prompt-to-video, image-to-video, talking-avatar, character-swap) with `text`.
+- Waiting for a plan: status `waiting_for_plan` with `waiting_for_plan`, `start_trial_url`, `say_to_user` and `expires_at` on `Video`.
+- New `ConflictError` (409) with `code` (`price_required`, `price_over_limit`, `already_running`, `lip_synced_scene`) and `credits` (the price); new `ApiErrorCode` type. It extends `MakeAIVideoError`, so existing catches still work.
+- Generated types regenerated (74 operations).
+
 ## 1.2.0 (2026-11-21)
 
 - New methods for every API endpoint the client lacked: `videos.imageToVideo()`, `videos.talkingAvatar()`, `videos.characterSwap()`, `videos.report()`, `uploads.reference()` (multipart), `uploads.videoAvatar()` (multipart), `uploads.videoFromUrl()`, `voices.sample()`, `brandKit.watermark()` (multipart). File uploads take a `Blob`/`File` or `{ data, name }`.

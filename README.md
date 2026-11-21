@@ -85,20 +85,42 @@ if (!verifyWebhookSignature(rawBody, req.headers["x-makeaivideo-signature"], sec
 
 See the [webhooks guide](https://makeaivideo.ai/docs/webhooks) for events and retries.
 
+## Fix one scene of a finished video
+
+```ts
+const video = await mav.videos.get(videoId, { include: "scenes" })
+for (const s of video.scenes ?? []) console.log(s.scene_number, s.lip_synced ? "(lip-synced)" : "", s.narration)
+
+// New line for scene 2, picture kept. Paid edits need max_credits; dry_run shows the price.
+const quote = await mav.videos.editSceneNarration(videoId, 2, { narration: "A tighter line.", dry_run: true })
+await mav.videos.editSceneNarration(videoId, 2, { narration: "A tighter line.", max_credits: 50, auto_export: true, idempotency_key: "fix-2" })
+
+// A lip-synced scene answers 409 lip_synced_scene: remake it with the new line instead.
+await mav.videos.regenerateScene(videoId, 3, { narration: "New line.", max_credits: 200, auto_export: true })
+
+// Free: swap the music from the library, then export again.
+const { tracks } = await mav.music.library({ mood: "upbeat" })
+await mav.videos.setMusic(videoId, { track_id: tracks[0].track_id })
+await mav.videos.renders.create(videoId, { max_credits: 30 })
+```
+
+While an edit runs, `video.edit.in_progress` is true and the download is the old file.
+
 ## Errors
 
-Every failure is a `MakeAIVideoError` with `status`, `code` and `requestId`. Subclasses: `AuthenticationError` (401), `PermissionError` (403, missing key scope), `ValidationError` (400), `InsufficientCreditsError` (402: nothing was created or charged; `shortfall`, `resetsAt` and `topUpUrl` say how many credits are missing, when the plan refills and where the user adds more), `NotFoundError` (404), `RateLimitError` (429), `VideoFailedError` (render failed while waiting).
+Every failure is a `MakeAIVideoError` with `status`, `code` and `requestId`. Subclasses: `AuthenticationError` (401), `PermissionError` (403, missing key scope), `ValidationError` (400), `InsufficientCreditsError` (402: nothing was created or charged; `shortfall`, `resetsAt` and `topUpUrl` say how many credits are missing, when the plan refills and where the user adds more), `NotFoundError` (404), `ConflictError` (409: `code` is `price_required` (send `max_credits`), `price_over_limit`, `already_running` (that scene is being remade) or `lip_synced_scene`; `credits` is the price; nothing was charged), `RateLimitError` (429), `VideoFailedError` (render failed while waiting).
 
 ## API coverage
 
 | Area | Methods |
 | --- | --- |
 | Account | `me()`, `credits()` (balance, `resets_at`, `top_up_url`), `topUpLink({ credits })` (a link the user opens to add credits; never charges), `workspace.get/update` |
-| Videos | `videos.list/create/get/update/delete/generate/cancel/download/estimate/waitForReady`, `videos.renders.*`, `videos.regenerateScene`, `videos.voice.get/set`, `videos.captions`, `videos.shareLink`, `videos.report` |
+| Videos | `videos.list/listPage/iterate/create/createFromPrompt/get/update/delete/generate/cancel/download/estimate/waitForReady`, `videos.get(id, { include: "scenes" })` |
+| Editing | `videos.regenerateScene`, `videos.editSceneNarration`, `videos.setMusic`, `videos.voice.get/set`, `videos.renders.*`, `videos.captions`, `videos.shareLink`, `videos.report` |
 | Photo and video tools | `videos.imageToVideo`, `videos.talkingAvatar`, `videos.characterSwap` |
 | Scripts | `videos.script`, `videos.scriptify`, `videos.fetchUrl`, `ai.enhancePrompt`, `ideas.generate` |
-| Assets | `tools.list`, `templates.list`, `characters.*`, `voices.list/preview/sample`, `music.list/generate`, `uploads.reference/referenceFromUrl/videoAvatar/videoFromUrl`, `brandKit.get/update/watermark` |
-| Publishing | `publishing.accounts.list/connect`, `publishing.publish`, `publishing.posts.list/get` |
+| Assets | `tools.list`, `templates.list`, `characters.*`, `voices.list/preview/sample`, `music.list/generate/library`, `uploads.reference/referenceFromUrl/videoAvatar/videoFromUrl`, `brandKit.get/update/watermark/watermarkFromUrl` |
+| Publishing | `publishing.accounts.list/connect`, `publishing.publish`, `publishing.suggestCaption`, `publishing.posts.list/get/reschedule/cancel` |
 | Webhooks | `webhooks.list/create/get/update/delete/test/deliveries` |
 
 Every request and response shape is also exported as a generated type (`ApiVideo`, `ApiCreateVideo`, `ApiCredits`...), and `API_OPERATIONS` lists every endpoint, both generated from the API's OpenAPI document (`https://app.makeaivideo.ai/api/v1/openapi.json`).

@@ -81,6 +81,29 @@ export class InsufficientCreditsError extends MakeAIVideoError {
   }
 }
 
+/**
+ * 409: the request clashes with the video's state or a price check.
+ * `code` says which: `price_required` (a paid edit sent without
+ * `max_credits`), `price_over_limit` (the price is above `max_credits`),
+ * `already_running` (that scene is being remade now; retryable),
+ * `lip_synced_scene` (change the line with `regenerateScene({ narration })`),
+ * or `conflict`. Nothing was charged.
+ */
+export class ConflictError extends MakeAIVideoError {
+  constructor(message: string, opts: { code?: string; requestId?: string; details?: unknown; retryable?: boolean } = {}) {
+    super(message, { status: 409, code: opts.code ?? "conflict", requestId: opts.requestId, details: opts.details, retryable: opts.retryable })
+    this.name = "ConflictError"
+  }
+
+  /** price_required / price_over_limit: the price in credits. */
+  get credits(): number | undefined {
+    const d = (this.details ?? {}) as Record<string, unknown>
+    const held = (d.held ?? {}) as Record<string, unknown>
+    const v = d.credits ?? held.credits
+    return typeof v === "number" ? v : undefined
+  }
+}
+
 /** 404: the video, character, webhook or other resource does not exist. */
 export class NotFoundError extends MakeAIVideoError {
   constructor(message: string, requestId?: string) {

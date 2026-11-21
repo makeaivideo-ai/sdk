@@ -1,6 +1,7 @@
 import type { MakeAIVideoConfig } from "./types"
 import {
   AuthenticationError,
+  ConflictError,
   InsufficientCreditsError,
   MakeAIVideoError,
   NotFoundError,
@@ -123,6 +124,8 @@ export class HttpClient {
           throw new PermissionError(message, requestId, details)
         case 404:
           throw new NotFoundError(message, requestId)
+        case 409:
+          throw new ConflictError(message, { code: env?.error?.code, requestId, details, retryable: env?.error?.retryable ?? false })
         case 429:
           throw new RateLimitError(message, retryAfter, requestId)
         default:

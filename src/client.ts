@@ -18,7 +18,15 @@ import type {
   WebhookEvent,
   Workspace,
   AspectRatio,
+  VideoListPage,
+  VideoListItem,
+  VideoStatus,
+  VideoMode,
+  PricedEditOptions,
+  LibraryTrack,
+  VideoMusic,
 } from "./types"
+import type { ApiPost } from "./schemas.generated"
 
 /** A file to upload: a Blob or File (Node 18+ and browsers), with an optional name. */
 export type UploadFile = Blob | { data: Blob; name: string }
@@ -103,9 +111,23 @@ export class MakeAIVideo {
   }
 
   readonly videos = {
-    /** Recent videos in the workspace. */
+    /** Recent videos in the workspace (the newest 50). For older videos use `listPage()` or `iterate()`. */
     list: async (): Promise<VideoSummary[]> =>
       (await this.http.request<{ videos: VideoSummary[] }>("GET", "/videos")).videos,
+
+    /**
+     * One page of videos, newest first. Pass `next_cursor` back as `cursor`
+     * for the next page (null on the last). `status` filters.
+     */
+    listPage: (
+      params: { limit?: number; cursor?: string; status?: Exclude<VideoStatus, "idea" | "waiting_for_plan"> } = {}
+    ): Promise<VideoListPage> =>
+      this.http.request("GET", "/videos", { query: { limit: params.limit ?? 20, cursor: params.cursor, status: params.status } }),
+
+    /** Every video, newest first, page by page: `for await (const v of mav.videos.iterate()) ...` */
+    iterate: (
+      params: { pageSize?: number; status?: Exclude<VideoStatus, "idea" | "waiting_for_plan"> } = {}
+    ): AsyncGenerator<VideoListItem> => this.iterateVideos(params),
 
     /**
      * Create a video. Either name a tool + fields (we write the script) or
@@ -118,8 +140,14 @@ export class MakeAIVideo {
         idempotencyKey: params.idempotency_key,
       }),
 
-    get: (videoId: string): Promise<Video> =>
-      this.http.request("GET", `/videos/${encodeURIComponent(videoId)}`),
+    /**
+     * Status and progress. Always has `edit` (a change still being made),
+     * `thumbnail_url`, `web_url` and `editor_url`. With `{ include: "scenes" }`
+     * also the script, `scenes` (each with `lip_synced`, `flagged`,
+     * `free_remake`, still and clip URLs), captions, music, voice and `brief_miss`.
+     */
+    get: (videoId: string, opts: { include?: "scenes" } = {}): Promise<Video> =>
+      this.http.request("GET", `/videos/${encodeURIComponent(videoId)}`, { query: { include: opts.include } }),
 
     update: (videoId: string, patch: { title?: string } & JsonObject): Promise<Video> =>
       this.http.request("PATCH", `/videos/${encodeURIComponent(videoId)}`, { body: patch }),
@@ -138,9 +166,49 @@ export class MakeAIVideo {
     download: (videoId: string): Promise<DownloadLink> =>
       this.http.request("GET", `/videos/${encodeURIComponent(videoId)}/download`),
 
-    /** Quote the credit cost before creating. */
-    estimate: (params: { tool: string; duration_seconds?: number; aspect_ratio?: AspectRatio } & JsonObject): Promise<Estimate> =>
-      this.http.request("POST", "/videos/estimate", { body: params }),
+    /**
+     * Free price quote in credits. Send exactly one of `tool` (a brief tool),
+     * `script`, or `kind` (prompt-to-video, image-to-video, talking-avatar,
+     * character-swap; with `text` for the prompt, narration or words said).
+     */
+    estimate: (
+      params: {
+        tool?: string
+        kind?: "prompt-to-video" | "image-to-video" | "talking-avatar" | "character-swap"
+        text?: string
+        duration_seconds?: number
+        mode?: string
+        aspect_ratio?: AspectRatio
+        quality?: "best" | "fast"
+      } & JsonObject
+    ): Promise<Estimate> => this.http.request("POST", "/videos/estimate", { body: params }),
+
+    /**
+     * Prompt to video: a video from a prompt in your own words (an idea, a
+     * skit, an ad, a story, a finished script), written as the web app's
+     * Prompt to video writes it. Answers with status `scripting`; poll
+     * `get()` or use `waitForReady()`. `max_credits` holds the create
+     * (nothing made, 409 price_over_limit) when the price is above it.
+     */
+    createFromPrompt: (params: {
+      topic: string
+      duration_seconds?: number
+      mode?: Extract<VideoMode, "cinematic" | "stock-narrated" | "ai-pictures">
+      quality?: "best" | "fast"
+      aspect_ratio?: AspectRatio
+      language?: string
+      voiceover?: boolean
+      voice_id?: string
+      music_id?: string
+      caption_style?: string
+      title?: string
+      /** A template id from `templates.list()`: its look, your words. */
+      template_id?: string
+      start_generation?: boolean
+      max_credits?: number
+      idempotency_key?: string
+    }): Promise<VideoCreated> =>
+      this.http.request("POST", "/videos/prompt-to-video", { body: params, idempotencyKey: params.idempotency_key }),
 
     /** Write a script without creating a video. */
     script: (params: { topic?: string; brief?: { tool: string; fields: Record<string, string>; duration_seconds?: number; aspect_ratio?: AspectRatio; language?: string }; mode?: string; target_duration?: number; language?: string; character_name?: string }): Promise<{ script: VideoScript; credits: number | null }> =>
@@ -157,22 +225,75 @@ export class MakeAIVideo {
     renders: {
       list: (videoId: string): Promise<{ renders: JsonObject[] }> =>
         this.http.request("GET", `/videos/${encodeURIComponent(videoId)}/renders`),
-      create: (videoId: string): Promise<JsonObject> =>
-        this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/renders`, { body: {} }),
+      /** Export again (after edits). `dry_run` returns the most it costs; `max_credits` refuses above it. */
+      create: (videoId: string, params: { dry_run?: boolean; max_credits?: number } = {}): Promise<JsonObject> =>
+        this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/renders`, { body: params }),
       progress: (videoId: string): Promise<JsonObject> =>
         this.http.request("GET", `/videos/${encodeURIComponent(videoId)}/renders/progress`),
     },
 
-    /** Rewrite one scene's narration and regenerate it. */
-    regenerateScene: (videoId: string, sceneNumber: number, params: { narration?: string } = {}): Promise<JsonObject> =>
-      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/scenes/${sceneNumber}/regenerate`, { body: params }),
+    /**
+     * Remake one scene (new picture), optionally with a new line
+     * (`narration`) or new picture direction (`visual_description`).
+     * Paid: send `max_credits` (see `PricedEditOptions`), or
+     * `use_free_remake: true` for a flagged scene's free remake.
+     * 409 `already_running` while that scene is being remade.
+     */
+    regenerateScene: (
+      videoId: string,
+      sceneNumber: number,
+      params: {
+        narration?: string
+        visual_description?: string
+        /** "best": remake a scene of a Fast video in Best quality, at the Best price. */
+        quality?: "best"
+        use_free_remake?: boolean
+      } & PricedEditOptions = {}
+    ): Promise<JsonObject> =>
+      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/scenes/${sceneNumber}/regenerate`, {
+        body: params,
+        idempotencyKey: params.idempotency_key,
+      }),
+
+    /**
+     * Change one scene's line and re-record only that scene; the picture is
+     * kept. A lip-synced scene answers 409 `lip_synced_scene` (use
+     * `regenerateScene({ narration })`). Needs `max_credits` when priced.
+     */
+    editSceneNarration: (
+      videoId: string,
+      sceneNumber: number,
+      params: { narration: string } & PricedEditOptions
+    ): Promise<JsonObject> =>
+      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/scenes/${sceneNumber}/narration`, {
+        body: params,
+        idempotencyKey: params.idempotency_key,
+      }),
+
+    /**
+     * Change or remove the background music (`track_id` from
+     * `music.library()` or `music.list()`, or "none"). Free; export again
+     * (`renders.create()`) to put it in the file.
+     */
+    setMusic: (videoId: string, params: { track_id?: string; volume?: number }): Promise<{ video_id: string; music: VideoMusic; next_step: string }> =>
+      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/music`, { body: params }),
 
     voice: {
       get: (videoId: string): Promise<JsonObject> =>
         this.http.request("GET", `/videos/${encodeURIComponent(videoId)}/voice`),
-      /** Re-voice a video with another voice. */
-      set: (videoId: string, params: { voice_id: string; voice_stability?: number; scenes?: number[] }): Promise<JsonObject> =>
-        this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/voice`, { body: params }),
+      /**
+       * Re-voice a video with another voice; `scenes` also changes lines.
+       * Needs `max_credits` when priced (see `PricedEditOptions`).
+       */
+      set: (
+        videoId: string,
+        params: {
+          voice_id: string
+          voice_stability?: "stable" | "balanced" | "expressive"
+          scenes?: Array<{ scene_number: number; narration: string }>
+        } & PricedEditOptions
+      ): Promise<JsonObject> =>
+        this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/voice`, { body: params, idempotencyKey: params.idempotency_key }),
     },
 
     captions: (videoId: string): Promise<JsonObject> =>
@@ -265,6 +386,16 @@ export class MakeAIVideo {
     },
   }
 
+  private async *iterateVideos(params: { pageSize?: number; status?: Exclude<VideoStatus, "idea" | "waiting_for_plan"> }): AsyncGenerator<VideoListItem> {
+    let cursor: string | undefined
+    for (;;) {
+      const page = await this.videos.listPage({ limit: params.pageSize ?? 100, cursor, status: params.status })
+      for (const v of page.videos) yield v
+      if (!page.next_cursor) return
+      cursor = page.next_cursor
+    }
+  }
+
   readonly ideas = {
     /** Brainstorm scored video ideas for a niche. */
     generate: (params: { niche: string; audience?: string; tone?: string; count?: number }): Promise<JsonObject> =>
@@ -318,6 +449,11 @@ export class MakeAIVideo {
     /** Generate an original background track. */
     generate: (params: { prompt: string; duration?: number; mood?: string }): Promise<JsonObject> =>
       this.http.request("POST", "/music", { body: params }),
+    /** The background music library the editor offers (free). Use a `track_id` with `videos.setMusic()` or as `music_id` on a create. */
+    library: (
+      params: { mood?: "calm" | "upbeat" | "cinematic" | "emotional" | "curious" | "adventure" | "electronic" | "inspirational" | "tense" | "quirky" } = {}
+    ): Promise<{ tracks: LibraryTrack[]; total: number; moods: unknown[]; note?: string }> =>
+      this.http.request("GET", "/music/library", { query: params }),
   }
 
   readonly uploads = {
@@ -342,6 +478,9 @@ export class MakeAIVideo {
     /** Upload a watermark image (a PNG with transparency works best). */
     watermark: (file: UploadFile): Promise<JsonObject> =>
       this.http.request("POST", "/brand-kit/watermark", { body: formWith("file", [file]) }),
+    /** Import the watermark image from a public URL (PNG, WebP or JPEG, up to 5 MB). */
+    watermarkFromUrl: (imageUrl: string): Promise<{ watermark_url: string | null }> =>
+      this.http.request("POST", "/brand-kit/watermark-from-url", { body: { image_url: imageUrl } }),
   }
 
   /**
@@ -370,7 +509,13 @@ export class MakeAIVideo {
         idempotency_key?: string
       },
     ): Promise<JsonObject> =>
-      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/publish`, { body: params }),
+      this.http.request("POST", `/videos/${encodeURIComponent(videoId)}/publish`, { body: params, idempotencyKey: params.idempotency_key }),
+    /** A ready-to-post caption with hashtags, written from the video's script (free; saved on the video). */
+    suggestCaption: (
+      videoId: string,
+      params: { refresh?: boolean } = {}
+    ): Promise<{ video_id: string; caption: string; per_platform: Record<string, string> | null; youtube_title: string; fallback: boolean; cached: boolean }> =>
+      this.http.request("POST", "/publishing/caption-suggest", { body: { video_id: videoId, ...params } }),
     posts: {
       /** Publish history, newest first. */
       list: (params: { limit?: number; cursor?: string; video_id?: string } = {}): Promise<JsonObject> =>
@@ -378,6 +523,12 @@ export class MakeAIVideo {
       /** One post: status and per-destination results. */
       get: (postId: string): Promise<JsonObject> =>
         this.http.request("GET", `/publishing/posts/${encodeURIComponent(postId)}`),
+      /** Move a scheduled post (while scheduled and more than about 2 minutes away). ISO 8601 with an offset. */
+      reschedule: (postId: string, scheduledFor: string): Promise<ApiPost> =>
+        this.http.request("PATCH", `/publishing/posts/${encodeURIComponent(postId)}`, { body: { scheduled_for: scheduledFor } }),
+      /** Cancel a scheduled post (while scheduled and more than about 2 minutes away). */
+      cancel: (postId: string): Promise<ApiPost> =>
+        this.http.request("DELETE", `/publishing/posts/${encodeURIComponent(postId)}`),
     },
   }
 
