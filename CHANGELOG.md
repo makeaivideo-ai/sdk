@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1 (2026-11-24)
+
+- README: signing up is free with no card; plans from $14; extra credits from $5 on a plan. No code change.
+
 ## 1.3.0 (2026-11-21)
 
 - Scenes and edits: `videos.get(id, { include: "scenes" })` returns the script, `scenes` (each with `lip_synced`, `flagged`, `free_remake`, still and clip URLs), captions, music, voice and `brief_miss`. Every `get()` now types `edit` (an edit still being made: `in_progress`, `stage`, `file_out_of_date`), `thumbnail_url`, `web_url` and `editor_url`.
