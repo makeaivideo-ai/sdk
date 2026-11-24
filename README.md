@@ -167,7 +167,7 @@ Minutes. Create returns at once with a `video_id`; poll with `waitForReady()` or
 
 ### How is it priced?
 
-MakeAIVideo is a paid product with monthly plans and a 7-day trial (card required). API calls use the same credits as the app, with no separate API plan, and `videos.estimate()` quotes the cost before you create. See [pricing](https://makeaivideo.ai/pricing).
+MakeAIVideo is a paid product. Signing up is free with no card: a free account can write up to 3 scripts, see 1 storyboard and create 1 AI character, but cannot make videos. There is no free trial. Making videos needs a monthly plan: Starter $14 (500 credits a month), Creator $39 (1,800), Pro $79 (4,500) or Custom from $149 (10,000 to 50,000); yearly is 10 months' price. On a plan you can add extra credits any time, from $5. A video created with no plan has status `waiting_for_plan` and a `start_trial_url`, which is the link to choose a plan (the field keeps its old name). API calls use the same credits as the app, with no separate API plan, and `videos.estimate()` quotes the cost before you create. See [pricing](https://makeaivideo.ai/pricing).
 
 ### Where do I get support?
 
